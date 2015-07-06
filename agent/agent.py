@@ -12,7 +12,7 @@ ERROR_CMDERROR_MESSAGE = {'message':'Bad command!'}
 ACTIONS = {'run-test', 'self-test'}
 
 TMP = os.path.abspath(r'./tmp')
-TEST_DRIVER = os.path.abspath(r'../chrome-webpage-profiler/test_driver.py')
+TEST_DRIVER = os.path.abspath(r'../../chrome-webpage-profiler/test_driver.py')
 #TEST_DRIVER = os.path.abspath(r'/bin/cat')
 
 # NOTE: the key is to avoid unintentional access, not to secure the agent
