@@ -55,7 +55,7 @@ def run_test(body):
 
     tests = body['tests-config']
     with open(testConfig, 'w') as outfile:
-        json.dump(tests, outfile)
+        json.dump(tests, outfile, indent=4)
 
     p = subprocess.Popen([TEST_DRIVER, testConfig], cwd=jobIdPath)
     rc = p.wait()
