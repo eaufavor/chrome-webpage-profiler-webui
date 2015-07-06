@@ -12,8 +12,8 @@ ERROR_CMDERROR_MESSAGE = {'message':'Bad command!'}
 ACTIONS = {'run-test', 'self-test'}
 
 TMP = os.path.abspath(r'./tmp')
-#TEST_DRIVER = os.path.abspath(r'../chrome-webpage-profiler/test_driver.py')
-TEST_DRIVER = os.path.abspath(r'/bin/cat')
+TEST_DRIVER = os.path.abspath(r'../chrome-webpage-profiler/test_driver.py')
+#TEST_DRIVER = os.path.abspath(r'/bin/cat')
 
 # NOTE: the key is to avoid unintentional access, not to secure the agent
 SECRET_KEY = '1a2b'
@@ -118,7 +118,7 @@ class S(BaseHTTPRequestHandler):
             response_body = execute_POST(post_body)
         self.wfile.write(response_body)
 
-def run(server_class=HTTPServer, handler_class=S, port=80):
+def run(server_class=HTTPServer, handler_class=S, port=8000):
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
     print 'Starting httpd...'
