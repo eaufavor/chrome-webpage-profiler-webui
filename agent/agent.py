@@ -38,7 +38,7 @@ class S(BaseHTTPRequestHandler):
                 os.makedirs(TMP)
             except Exception as _:
                 msg = 'Error making output directory: %s', TMP
-                return json.dumps({'message': msg, 'status': -1})
+                return {'message': msg, 'status': -1}
         if not os.path.isfile(TEST_DRIVER):
             msg = 'No test driver found at %s' % TEST_DRIVER
             return {'message': msg, 'status': -1}
@@ -241,10 +241,10 @@ class S(BaseHTTPRequestHandler):
         content_len = int(self.headers.getheader('content-length', 0))
         content_type = self.headers.getheader('content-type', 0)
         if content_type.lower() != 'application/json':
-            response_body = json.dumps(ERROR_JSON_MESSAGE)
+            response_body = json.dumps(ERROR_JSON_MESSAGE, indent=4)
         else:
             post_body = self.rfile.read(content_len)
-            response_body =  json.dumps(self.execute_POST(post_body))
+            response_body =  json.dumps(self.execute_POST(post_body), indent=4)
         self.wfile.write(response_body)
 
 def run(server_class=HTTPServer, handler_class=S, port=8000):
