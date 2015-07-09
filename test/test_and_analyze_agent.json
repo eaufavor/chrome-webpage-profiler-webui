@@ -1,0 +1,26 @@
+{
+    "tests-config": {
+        "tests": [
+            {
+                "url": "https://www.cmu.edu",
+                "har_file_name": "cmu_har",
+                "packet_capture_file_name": "cmu_dump",
+                "fresh_view": true
+            },
+            {
+                "url": "https://www.cmu.edu",
+                "har_file_name": "cmu_har2",
+                "packet_capture_file_name": "cmu_dump2",
+                "fresh_view": false
+            }
+        ],
+        "default": {
+            "log_ssl_keys": true,
+            "headless": true,
+            "save_har": true,
+            "save_packet_capture": true
+        }
+    },
+    "action": "run-test-and-analyse",
+    "key": "1a2b"
+}

@@ -16,10 +16,10 @@ ACTIONS = {'run-test', 'self-test', 'run-test-and-analyse'}
 TMP = os.path.abspath(r'./tmp')
 TEST_DRIVER = os.path.abspath(r'../../chrome-webpage-profiler/test_driver.py')
 H2_ANALYZER = os.path.abspath(r'../../http2-dump-anatomy/http_traffic_analyzer.py')
-MERGE_TOOL = os.path.abspath(r'../../chrome-webpage-profiler/merge_har.py')
+MERGE_TOOL = os.path.abspath(r'../../http2-dump-anatomy/merge_har.py')
 TSHARK = os.path.abspath(r'../../wireshark-1.99.7/tshark')
 
-ANALYSE_CMD = '{H2_ANALYZER} -g {{pcapfile}} -k {{keyfile}} -b {TSHARK} | {MERGE_TOOL} -h {{harfile}} -o {{finalhar}}'
+ANALYSE_CMD = '{H2_ANALYZER} -g {{pcapfile}} -k {{keyfile}} -b {TSHARK} | {MERGE_TOOL} {{harfile}} -o {{finalhar}}'
 ANALYSE_CMD = ANALYSE_CMD.format(H2_ANALYZER=H2_ANALYZER, TSHARK=TSHARK, MERGE_TOOL=MERGE_TOOL)
 #TEST_DRIVER = os.path.abspath(r'/bin/cat')
 
@@ -30,7 +30,7 @@ class S(BaseHTTPRequestHandler):
     def run_test(self, body):
 
         if not body.get('tests-config'):
-            return json.dumps({'message': ERROR_CMDERROR_MESSAGE})
+            return {'message': ERROR_CMDERROR_MESSAGE}
 
         if not os.path.isdir(TMP):
             try:
@@ -40,7 +40,7 @@ class S(BaseHTTPRequestHandler):
                 return json.dumps({'message': msg, 'status': -1})
         if not os.path.isfile(TEST_DRIVER):
             msg = 'No test driver found at %s' % TEST_DRIVER
-            return json.dumps({'message': msg, 'status': -1})
+            return {'message': msg, 'status': -1}
 
         jobId = "%d"%(time.time()*1000)
         jobIdIndex = jobId[-5:]
@@ -53,14 +53,14 @@ class S(BaseHTTPRequestHandler):
                 os.makedirs(jobIdIndexPath)
             except Exception as _:
                 msg = 'Error making output directory: %s', jobIdIndexPath
-                return json.dumps({'message': msg, 'status': -2})
+                return {'message': msg, 'status': -2}
 
         if not os.path.isdir(jobIdPath):
             try:
                 os.makedirs(jobIdPath)
             except Exception as _:
                 msg = 'Error making output directory: %s', jobIdPath
-                return json.dumps({'message': msg, 'status': -2})
+                return {'message': msg, 'status': -2}
 
         tests = body['tests-config']
         with open(testConfig, 'w') as outfile:
@@ -74,9 +74,10 @@ class S(BaseHTTPRequestHandler):
             response['files'] = []
             for f in os.listdir(jobIdPath):
                 response['files'].append(os.path.join('/tmp/', jobIdIndex, jobId, f))
-            return json.dumps(response)
+            return response
         else:
-            return json.dumps({'message': 'FAIL. return code%d'%rc, 'status': rc})
+            self.log_message('Tests failed :%d', rc)
+            return {'message': 'FAIL. return code%d'%rc, 'status': rc}
 
     ### the following two helper fuctions are from chrome-webpage-profiler
     ### NOTE: remmember to sync them if those are updated
@@ -175,10 +176,10 @@ class S(BaseHTTPRequestHandler):
             return json.dumps(ERROR_CMDERROR_MESSAGE)
 
         if body['action'] == 'run-test':
-            return self.run_test(body)
+            return json.dumps(self.run_test(body))
         elif body['action'] == 'run-test-and-analyse':
             response = self.run_test(body)
-            return self.run_analyse(response)
+            return json.dumps(self.run_analyse(response))
         elif body['action'] == 'self-test':
             return self.self_test()
 
