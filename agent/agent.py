@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #http://www.acmesystems.it/python_httpd
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-import json, subprocess, os, time
+import json, subprocess, os, time, urlparse
 
 HELLO_MESSAGE = {'message':'hello, please use JSON via POST!'}
 ERROR_JSON_MESSAGE = {'message':'POST content type must be application/json!'}
@@ -94,18 +94,55 @@ def execute_POST(body):
         return self_test()
 
 class S(BaseHTTPRequestHandler):
-    def _set_headers(self):
+    def _set_headers(self, mime_type='application/json'):
         self.send_response(200)
-        self.send_header('Content-type', 'application/json')
+        self.send_header('Content-type', mime_type)
         self.end_headers()
 
     def do_GET(self):
-        self._set_headers()
-        body = json.dumps(HELLO_MESSAGE)
-        self.wfile.write(body)
+        request = urlparse.urlparse(self.path)
+        query = urlparse.parse_qs(request.query)
+
+        makeJsonp = False
+
+        if not request.path.startswith('/tmp'):
+            self.send_error(403,'Should not access: %s' % request.path)
+            return
+        if request.path.endswith(".json") or request.path.endswith(".har"):
+            mimeType = 'application/json'
+        elif request.path.endswith(".jsonp") or request.path.endswith(".harp"):
+            # callable types
+            mimeType = 'application/javascript'
+            makeJsonp = True
+        elif request.path.endswith(".pcap"):
+            mimeType = 'application/octet-stream'
+        else:
+            # the ssl_keylog
+            mimeType = 'text/plain'
+        path = TMP + request.path.split('/tmp')[1]
+        if makeJsonp:
+            path = path[:-1] #remove tailing 'p'
+        if not os.path.isfile(path):
+            # NOTE: this will show clients the internal path (for debug)
+            self.send_error(404,'File Not Found: %s' % path)
+            return
+        self._set_headers(mimeType)
+        f = open(path)
+        if makeJsonp:
+            callback = query.get('callback', [])
+            if not callback:
+                callback = 'onInputData'
+            else:
+                callback = callback[0]
+            response_body = '{0}({1});'.format(callback, f.read())
+            self.wfile.write(response_body)
+        else:
+            self.wfile.write(f.read())
+
+        return
 
     def do_HEAD(self):
-        self._set_headers()
+        self.send_error(501, 'Do not support HEAD')
 
     def do_POST(self):
         self._set_headers()
