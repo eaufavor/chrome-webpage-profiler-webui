@@ -13,7 +13,7 @@ ACTIONS = {'run-test', 'self-test', 'run-test-and-analyze'}
 
 
 # TODO: dryrun to test these paths
-os.chdir(os.path.abspath(__file__))
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 TMP = os.path.abspath(r'./tmp')
 TEST_DRIVER = os.path.abspath(r'../../chrome-webpage-profiler/test_driver.py')
 H2_ANALYZER = os.path.abspath(r'../../http2-dump-anatomy/http_traffic_analyzer.py')

@@ -21,6 +21,6 @@
             "save_packet_capture": true
         }
     },
-    "action": "run-test-and-analyse",
+    "action": "run-test-and-analyze",
     "key": "1a2b"
 }
