@@ -9,10 +9,11 @@ ERROR_BADJSON_MESSAGE = {'message':'POST content must be valid json!'}
 ERROR_BADPASS_MESSAGE = {'message':'Wrong secret key!'}
 ERROR_CMDERROR_MESSAGE = {'message':'Bad command!'}
 
-ACTIONS = {'run-test', 'self-test', 'run-test-and-analyse'}
+ACTIONS = {'run-test', 'self-test', 'run-test-and-analyze'}
 
 
 # TODO: dryrun to test these paths
+os.chdir(os.path.abspath(__file__))
 TMP = os.path.abspath(r'./tmp')
 TEST_DRIVER = os.path.abspath(r'../../chrome-webpage-profiler/test_driver.py')
 H2_ANALYZER = os.path.abspath(r'../../http2-dump-anatomy/http_traffic_analyzer.py')
@@ -125,7 +126,8 @@ class S(BaseHTTPRequestHandler):
         p = subprocess.Popen(cmd, shell=True)
         rc = p.wait()
         if rc == 0:
-            return finalHarFile
+            # fix path: abs file path to url path
+            return '/tmp' + finalHarFile.split('/tmp')[1]
         else:
             self.log_message('Analyse cmd failed: %d', rc)
             return None
@@ -160,26 +162,26 @@ class S(BaseHTTPRequestHandler):
         rc = subprocess.check_output('df -h; exit 0', stderr=subprocess.STDOUT, shell=True)
         response['results']['df'] = rc
 
-        return json.dumps(response)
+        return response
 
 
     def execute_POST(self, body):
         try:
             body = json.loads(body)
         except ValueError as _:
-            return json.dumps(ERROR_BADJSON_MESSAGE)
+            return ERROR_BADJSON_MESSAGE
 
         if body.get('key') != SECRET_KEY:
-            return json.dumps(ERROR_BADPASS_MESSAGE)
+            return ERROR_BADPASS_MESSAGE
 
         if body.get('action') not in ACTIONS:
-            return json.dumps(ERROR_CMDERROR_MESSAGE)
+            return ERROR_CMDERROR_MESSAGE
 
         if body['action'] == 'run-test':
-            return json.dumps(self.run_test(body))
-        elif body['action'] == 'run-test-and-analyse':
+            return self.run_test(body)
+        elif body['action'] == 'run-test-and-analyze':
             response = self.run_test(body)
-            return json.dumps(self.run_analyse(response))
+            return self.run_analyse(response)
         elif body['action'] == 'self-test':
             return self.self_test()
 
@@ -242,7 +244,7 @@ class S(BaseHTTPRequestHandler):
             response_body = json.dumps(ERROR_JSON_MESSAGE)
         else:
             post_body = self.rfile.read(content_len)
-            response_body = self.execute_POST(post_body)
+            response_body =  json.dumps(self.execute_POST(post_body))
         self.wfile.write(response_body)
 
 def run(server_class=HTTPServer, handler_class=S, port=8000):
