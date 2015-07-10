@@ -2,4 +2,4 @@
 !.gitignore
 !*.py
 !*.sh
-!.example
+!*.example
