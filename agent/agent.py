@@ -260,8 +260,10 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--daemon', action='store_true', default=False, help='run the agent as a daemon')
     args = parser.parse_args()
     if args.daemon:
-        import daemon, sys
-        sys.stdout = open('agent.log', 'a')
+        import daemon
+        agentLog = open('agent.log', 'w+')
+        errLog = open('err.log', 'w+')
+        context = daemon.DaemonContext(stdout=agentLog, stderr=errLog)
         with daemon.DaemonContext():
             run(port=args.port)
     else:
