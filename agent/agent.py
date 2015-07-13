@@ -2,6 +2,7 @@
 #http://www.acmesystems.it/python_httpd
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import json, subprocess, os, time, urlparse, re
+import daemon
 
 HELLO_MESSAGE = {'message':'hello, please use JSON via POST!'}
 ERROR_JSON_MESSAGE = {'message':'POST content type must be application/json!'}
@@ -254,9 +255,13 @@ def run(server_class=HTTPServer, handler_class=S, port=8000):
     httpd.serve_forever()
 
 if __name__ == "__main__":
+    """
     from sys import argv
 
     if len(argv) == 2:
         run(port=int(argv[1]))
     else:
+        run()
+    """
+    with daemon.DaemonContext():
         run()
