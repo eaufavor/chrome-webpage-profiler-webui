@@ -13,14 +13,14 @@ ACTIONS = {'run-test', 'self-test', 'run-test-and-analyze'}
 
 
 # TODO: dryrun to test these paths
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
 TMP = os.path.abspath(r'./tmp')
 TEST_DRIVER = os.path.abspath(r'../../chrome-webpage-profiler/test_driver.py')
 H2_ANALYZER = os.path.abspath(r'../../http2-dump-anatomy/http_traffic_analyzer.py')
 MERGE_TOOL = os.path.abspath(r'../../http2-dump-anatomy/merge_har.py')
 TSHARK = os.path.abspath(r'../../wireshark-1.99.7/tshark')
 
-PIDFILE = 'chrome-webpage-profiler-agent.pid'
+PIDFILE = os.path.abspath(r'./chrome-webpage-profiler-agent.pid')
 
 ANALYSE_CMD = '{H2_ANALYZER} -g {{pcapfile}} -k {{keyfile}} -b {TSHARK} | {MERGE_TOOL} {{harfile}} -o {{finalhar}}'
 ANALYSE_CMD = ANALYSE_CMD.format(H2_ANALYZER=H2_ANALYZER, TSHARK=TSHARK, MERGE_TOOL=MERGE_TOOL)
@@ -270,14 +270,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.daemon:
         import daemon, daemon.pidfile, sys
-        homeDir = os.path.dirname(os.path.abspath(__file__))
         pidFile = daemon.pidfile.PIDLockFile(PIDFILE)
         pid = pidFile.read_pid()
         if pid is not None:
             print "Another agent daemon, PID %d, is running. Quit." % pid
             sys.exit(-1)
         agentLog = open('agent.log', 'a+')
-        context = daemon.DaemonContext(working_directory=homeDir, stdout=agentLog,
+        context = daemon.DaemonContext(stdout=agentLog,
                                        stderr=agentLog,
                                        pidfile=pidFile)
         context.files_preserve = [agentLog]
