@@ -72,11 +72,12 @@ class S(BaseHTTPRequestHandler):
                                  stdout=testLog, stderr=testLog)
             rc = p.wait()
         if rc == 0:
+            jobUrl = os.path.join('/tmp/', jobIdIndex, jobId)
             response = {'message': 'OK. Done', 'job-id': jobId,
-                        'status': rc, '_job-path': jobIdPath}
+                        'status': rc, '_job-path': jobIdPath, '_job-url': jobUrl}
             response['files'] = []
             for f in os.listdir(jobIdPath):
-                response['files'].append(os.path.join('/tmp/', jobIdIndex, jobId, f))
+                response['files'].append(os.path.join(jobUrl, f))
             return response
         else:
             self.log_message('Tests failed :%d', rc)
@@ -125,7 +126,7 @@ class S(BaseHTTPRequestHandler):
         cmd = ANALYSE_CMD.format(pcapfile=dump_file, keyfile=key_file, harfile=har_file,finalhar=finalHarFile)
         self.log_message('Analyze running: %s', cmd)
         jobIdPath = os.path.dirname(dump_file)
-        with open (os.path.join(jobIdPath, 'analyze.log'), 'w+') as analyzeLog:
+        with open (os.path.join(jobIdPath, 'analyze.log'), 'a+') as analyzeLog:
             # WARNING: security risk: shell=True
             p = subprocess.Popen(cmd, shell=True, stdout=analyzeLog, stderr=analyzeLog)
             rc = p.wait()
@@ -159,6 +160,7 @@ class S(BaseHTTPRequestHandler):
         for pair in pairs:
             finalHars.append(self.do_analyse(pair[0], pair[1], keyFile))
         response['final-hars'] = finalHars
+        response['files'].append(os.path.join(response['_job-url'], 'analyze.log'))
         return response
 
     def self_test(self):
