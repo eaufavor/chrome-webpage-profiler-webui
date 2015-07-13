@@ -263,8 +263,11 @@ if __name__ == "__main__":
         import daemon
         agentLog = open('agent.log', 'w+')
         errLog = open('err.log', 'w+')
-        context = daemon.DaemonContext(stdout=agentLog, stderr=errLog)
-        with daemon.DaemonContext():
+        homeDir = os.path.dirname(os.path.abspath(__file__))
+        context = daemon.DaemonContext(working_directory=homeDir, stdout=agentLog, stderr=errLog)
+        context.files_preserve = [agentLog, errLog]
+        with context:
+            print "Starting Daemon on port %d" %  args.port
             run(port=args.port)
     else:
         run(port=args.port)
