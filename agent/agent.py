@@ -20,6 +20,8 @@ H2_ANALYZER = os.path.abspath(r'../../http2-dump-anatomy/http_traffic_analyzer.p
 MERGE_TOOL = os.path.abspath(r'../../http2-dump-anatomy/merge_har.py')
 TSHARK = os.path.abspath(r'../../wireshark-1.99.7/tshark')
 
+PIDFILE = 'chrome-webpage-profiler-agent.pid'
+
 ANALYSE_CMD = '{H2_ANALYZER} -g {{pcapfile}} -k {{keyfile}} -b {TSHARK} | {MERGE_TOOL} {{harfile}} -o {{finalhar}}'
 ANALYSE_CMD = ANALYSE_CMD.format(H2_ANALYZER=H2_ANALYZER, TSHARK=TSHARK, MERGE_TOOL=MERGE_TOOL)
 #TEST_DRIVER = os.path.abspath(r'/bin/cat')
@@ -264,16 +266,34 @@ if __name__ == "__main__":
                                      description='Web agent for Chrome webpage profiler suite')
     parser.add_argument('-p', '--port',type=int, default=8000, help='the TCP port number the agent listens')
     parser.add_argument('-d', '--daemon', action='store_true', default=False, help='run the agent as a daemon')
+    parser.add_argument('-k', '--kill', action='store_true', default=False, help='kill a running daemon')
     args = parser.parse_args()
     if args.daemon:
-        import daemon
-        agentLog = open('agent.log', 'w+')
-        errLog = open('err.log', 'w+')
+        import daemon, daemon.pidfile, sys
         homeDir = os.path.dirname(os.path.abspath(__file__))
-        context = daemon.DaemonContext(working_directory=homeDir, stdout=agentLog, stderr=errLog)
-        context.files_preserve = [agentLog, errLog]
+        pidFile = daemon.pidfile.PIDLockFile(PIDFILE)
+        pid = pidFile.read_pid()
+        if pid is not None:
+            print "Another agent daemon, PID %d, is running. Quit." % pid
+            sys.exit(-1)
+        agentLog = open('agent.log', 'a+')
+        context = daemon.DaemonContext(working_directory=homeDir, stdout=agentLog,
+                                       stderr=agentLog,
+                                       pidfile=pidFile)
+        context.files_preserve = [agentLog]
         with context:
             print "Starting Daemon on port %d" %  args.port
             run(port=args.port)
+    elif args.kill:
+        import signal, daemon, daemon.pidfile, sys
+        pidFile = daemon.pidfile.PIDLockFile(PIDFILE)
+        pid = pidFile.read_pid()
+        if pid is None:
+            print "No agent daemon found."
+            sys.exit(-1)
+        else:
+            os.kill(int(pid), signal.SIGTERM)
+            print "PID %d killed" % pid
+
     else:
         run(port=args.port)
