@@ -263,6 +263,6 @@ if __name__ == "__main__":
         import daemon, sys
         sys.stdout = open('agent.log', 'a')
         with daemon.DaemonContext():
-            run(args.port)
+            run(port=args.port)
     else:
-        run(args.port)
+        run(port=args.port)
