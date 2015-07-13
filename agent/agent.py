@@ -67,8 +67,10 @@ class S(BaseHTTPRequestHandler):
         with open(testConfig, 'w') as outfile:
             json.dump(tests, outfile, indent=4)
 
-        p = subprocess.Popen([TEST_DRIVER, testConfig], cwd=jobIdPath)
-        rc = p.wait()
+        with open (os.path.join(jobIdPath, 'test.log'), 'w+') as testLog:
+            p = subprocess.Popen([TEST_DRIVER, testConfig], cwd=jobIdPath,
+                                 stdout=testLog, stderr=testLog)
+            rc = p.wait()
         if rc == 0:
             response = {'message': 'OK. Done', 'job-id': jobId,
                         'status': rc, '_job-path': jobIdPath}
@@ -121,10 +123,12 @@ class S(BaseHTTPRequestHandler):
     def do_analyse(self, dump_file, har_file, key_file):
         finalHarFile = har_file.split('.har')[0]+'_final.har'
         cmd = ANALYSE_CMD.format(pcapfile=dump_file, keyfile=key_file, harfile=har_file,finalhar=finalHarFile)
-        # WARNING: security risk: shell=True
-        self.log_message('Analyse running: %s', cmd)
-        p = subprocess.Popen(cmd, shell=True)
-        rc = p.wait()
+        self.log_message('Analyze running: %s', cmd)
+        jobIdPath = os.path.dirname(dump_file)
+        with open (os.path.join(jobIdPath, 'analyze.log'), 'w+') as analyzeLog:
+            # WARNING: security risk: shell=True
+            p = subprocess.Popen(cmd, shell=True, stdout=analyzeLog, stderr=analyzeLog)
+            rc = p.wait()
         if rc == 0:
             # fix path: abs file path to url path
             return '/tmp' + finalHarFile.split('/tmp')[1]
@@ -209,7 +213,7 @@ class S(BaseHTTPRequestHandler):
         elif request.path.endswith(".pcap"):
             mimeType = 'application/octet-stream'
         else:
-            # the ssl_keylog
+            # the ssl_keylog, and .log file
             mimeType = 'text/plain'
         path = TMP + request.path.split('/tmp')[1]
         if makeJsonp:
