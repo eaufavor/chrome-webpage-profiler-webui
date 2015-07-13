@@ -95,7 +95,7 @@ class S(BaseHTTPRequestHandler):
     def _outfile_path(self, working_dir, url, suffix=None, trial=None):
         '''Returns a path for an output file (e.g., HAR, screenshot, pcap)'''
         filename = self._sanitize_url(url)
-        if trial:
+        if trial is not None:
             filename += '_trial%d' % trial
         if suffix:
             filename += suffix
@@ -114,10 +114,10 @@ class S(BaseHTTPRequestHandler):
                 pcapFileName = self._outfile_path(working_dir, pcapFileName, suffix='.pcap', trial=i)
                 harFileName = self._outfile_path(working_dir, harFileName, suffix='.har', trial=i)
                 if not os.path.isfile(pcapFileName):
-                    self.log_message('Analyse warning: missing %d', pcapFileName)
+                    self.log_message('Analyse warning: missing %s', pcapFileName)
                     continue
                 if not os.path.isfile(harFileName):
-                    self.log_message('Analyse warning: missing %d', harFileName)
+                    self.log_message('Analyse warning: missing %s', harFileName)
                     continue
                 pairs.append([pcapFileName, harFileName])
 
