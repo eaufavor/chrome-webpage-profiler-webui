@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 #http://www.acmesystems.it/python_httpd
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-import json, subprocess, os, time, urlparse, re
-import daemon
+import json, subprocess, os, time, urlparse, re, argparse
 
 HELLO_MESSAGE = {'message':'hello, please use JSON via POST!'}
 ERROR_JSON_MESSAGE = {'message':'POST content type must be application/json!'}
@@ -255,13 +254,15 @@ def run(server_class=HTTPServer, handler_class=S, port=8000):
     httpd.serve_forever()
 
 if __name__ == "__main__":
-    """
-    from sys import argv
-
-    if len(argv) == 2:
-        run(port=int(argv[1]))
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,\
+                                     description='Web agent for Chrome webpage profiler suite')
+    parser.add_argument('-p', '--port',type=int, default=8000, help='the TCP port number the agent listens')
+    parser.add_argument('-d', '--daemon', action='store_true', default=False, help='run the agent as a daemon')
+    args = parser.parse_args()
+    if args.daemon:
+        import daemon, sys
+        sys.stdout = open('agent.log', 'a')
+        with daemon.DaemonContext():
+            run(args.port)
     else:
-        run()
-    """
-    with daemon.DaemonContext():
-        run()
+        run(args.port)
