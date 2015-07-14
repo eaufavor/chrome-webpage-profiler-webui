@@ -25,6 +25,8 @@ def execute(args):
         print data
         return
     responseJson = json.loads(data)
+    if 'message' in responseJson:
+        print responseJson['message']
     if not args.noresult and not args.harp:
         os.makedirs(responseJson['job-id'])
         if 'final-hars' in responseJson:
