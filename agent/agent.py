@@ -96,7 +96,7 @@ class S(BaseHTTPRequestHandler):
         '''Returns a path for an output file (e.g., HAR, screenshot, pcap)'''
         filename = self._sanitize_url(url)
         if trial is not None:
-            filename += '_trial%d' % trial
+            filename += '_%d' % trial
         if suffix:
             filename += suffix
         return os.path.join(working_dir, filename)
