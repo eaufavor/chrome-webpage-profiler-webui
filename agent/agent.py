@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #http://www.acmesystems.it/python_httpd
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-import json, subprocess, os, time, urlparse, re, argparse
+import json, subprocess, os, time, urlparse, re, argparse, socket, datetime
 
 HELLO_MESSAGE = {'message':'hello, please use JSON via POST!'}
 ERROR_JSON_MESSAGE = {'message':'POST content type must be application/json!'}
@@ -46,7 +46,7 @@ class S(BaseHTTPRequestHandler):
             return {'message': msg, 'status': -1}
 
         jobId = "%d"%(time.time()*1000)
-        jobIdIndex = jobId[-5:]
+        jobIdIndex = jobId[-10:-5]
         jobIdIndexPath = os.path.join(TMP, jobIdIndex)
         jobIdPath = os.path.join(jobIdIndexPath, jobId)
         testConfig = os.path.join(jobIdPath, 'tests.json')
@@ -197,17 +197,14 @@ class S(BaseHTTPRequestHandler):
     def _set_headers(self, mime_type='application/json'):
         self.send_response(200)
         self.send_header('Content-type', mime_type)
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
 
-    def do_GET(self):
+    def send_files(self):
         request = urlparse.urlparse(self.path)
         query = urlparse.parse_qs(request.query)
-
         makeJsonp = False
 
-        if not request.path.startswith('/tmp'):
-            self.send_error(403,'Should not access: %s' % request.path)
-            return
         if request.path.endswith(".json") or request.path.endswith(".har"):
             mimeType = 'application/json'
         elif request.path.endswith(".jsonp") or request.path.endswith(".harp"):
@@ -229,30 +226,83 @@ class S(BaseHTTPRequestHandler):
         self._set_headers(mimeType)
         f = open(path)
         if makeJsonp:
-            callback = query.get('callback', [])
-            if not callback:
-                callback = 'onInputData'
-            else:
-                callback = callback[0]
+            callback = query.get('callback', ['callback'])[0]
             response_body = '{0}({1});'.format(callback, f.read())
             self.wfile.write(response_body)
         else:
             self.wfile.write(f.read())
+
+    def get_status(self):
+        request = urlparse.urlparse(self.path)
+        query = urlparse.parse_qs(request.query)
+        callback = query.get('callback', [])
+        if not callback:
+            callback = 'callback'
+        else:
+            callback = callback[0]
+        reply = {'message':'%s \n Chrome webpage profiler web agent is alive at %s.' %\
+                        (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), socket.gethostname())}
+        response_body = '{0}({1});'.format(callback, json.dumps(reply, indent=4))
+        self.wfile.write(response_body)
+
+    def do_GET(self):
+        request = urlparse.urlparse(self.path)
+
+        if request.path.startswith('/tmp'):
+            self.send_files()
+        elif request.path == ('/status'):
+            self.get_status()
+        elif request.path == ('/run'):
+            self.run_Jsonp()
+        else:
+            self.send_error(403,'Should not access: %s' % request.path)
+            return
 
         return
 
     def do_HEAD(self):
         self.send_error(501, 'Do not support HEAD')
 
+    def run_Jsonp(self):
+        request = urlparse.urlparse(self.path)
+        query = urlparse.parse_qs(request.query)
+        callback = query.get('callback', ['callback'])[0]
+        body = {}
+        body['action'] = query.get('action', [None])[0]
+        body['key'] = query.get('key', [None])[0]
+        body['tests-config'] = query.get('tests-config', [None])[0]
+        print body
+        body = json.dumps(body)
+        response_body =  json.dumps(self.execute_POST(body), indent=4)
+        response_body = '{0}({1});'.format(callback, response_body)
+        self.wfile.write(response_body)
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
+
     def do_POST(self):
-        self._set_headers()
+        request = urlparse.urlparse(self.path)
+        if request.path == ('/run'):
+            query = urlparse.parse_qs(request.query)
+            callback = query.get('callback', ['callback'])[0]
+            makeJsonp = True
+            self._set_headers("application/javascript")
+        else:
+            makeJsonp = False
+            self._set_headers()
         content_len = int(self.headers.getheader('content-length', 0))
         content_type = self.headers.getheader('content-type', 0)
-        if content_type.lower() != 'application/json':
+        if content_type.lower() != 'application/json' and \
+           content_type.lower() != 'application/x-www-form-urlencoded; charset=UTF-8'.lower():
             response_body = json.dumps(ERROR_JSON_MESSAGE, indent=4)
         else:
             post_body = self.rfile.read(content_len)
             response_body =  json.dumps(self.execute_POST(post_body), indent=4)
+        if makeJsonp:
+            response_body = '{0}({1});'.format(callback, response_body)
         self.wfile.write(response_body)
 
 def run(server_class=HTTPServer, handler_class=S, port=8000):
