@@ -7,6 +7,9 @@ def download_files(responseJson, args, agent):
     if args.tarball:
         fUrl = agent+responseJson['tarball']
         p = subprocess.Popen(['wget', fUrl, '-O', 'results.tar.gz'])
+        rc = p.wait()
+        if rc != 0:
+            print 'Download %s failed' % fUrl
         return
     if not os.path.isdir(responseJson['job-id']):
         os.makedirs(responseJson['job-id'])
