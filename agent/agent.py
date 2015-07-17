@@ -123,12 +123,12 @@ def analyze_worker(worker_id, queue):
         queue.task_done()
 
 def mark_all_done(working_dir):
-    p = subprocess.Popen(['touch', '.ALL_DONE'], cwd=working_dir)
-    p.wait()
     randomFile = "%d.tar.gz"%(time.time()*1000)
     p = subprocess.Popen(['tar', '-czf', '../%s'%randomFile, '.'], cwd=working_dir)
     p.wait()
     p = subprocess.Popen(['mv', '../%s'%randomFile, './results.tar.gz'], cwd=working_dir)
+    p.wait()
+    p = subprocess.Popen(['touch', '.ALL_DONE'], cwd=working_dir)
     p.wait()
 
 ### async functions end

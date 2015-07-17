@@ -1,45 +1,52 @@
 #!/usr/bin/env python
 
 import json, argparse
-import httplib, subprocess, os
+import httplib, subprocess, os, time
 
 def download_files(responseJson, args, agent):
     if args.tarball:
         fUrl = agent+responseJson['tarball']
         p = subprocess.Popen(['wget', fUrl, '-O', 'results.tar.gz'])
         return
-    os.makedirs(responseJson['job-id'])
+    if not os.path.isdir(responseJson['job-id']):
+        os.makedirs(responseJson['job-id'])
     if 'final-hars' in responseJson:
         for f in responseJson['final-hars']:
             fUrl = agent+f
-            p = subprocess.Popen(['wget', '-nv', fUrl], cwd=responseJson['job-id'])
+            p = subprocess.Popen(['wget', '-nc', '-nv', fUrl], cwd=responseJson['job-id'])
             rc = p.wait()
             if rc != 0:
                 print 'Download %s failed' % fUrl
     if not args.final:
         for f in responseJson['files']:
             fUrl = agent+f
-            p = subprocess.Popen(['wget', '-nv', fUrl],  cwd=responseJson['job-id'])
+            p = subprocess.Popen(['wget', '-nc', '-nv', fUrl],  cwd=responseJson['job-id'])
             rc = p.wait()
             if rc != 0:
                 print 'Download %s failed' % fUrl
 
-def do_retrieve(conn, jobId, wait):
+def do_retrieve(conn, jobId, wait, verbose):
     while True:
         conn.request("GET", '/job?jobid=%s'%jobId)
         poll = conn.getresponse()
-        print poll.status, poll.reason
+        if poll.status != 200 or verbose:
+            print poll.status, poll.reason
         data = poll.read()
         pollJson = json.loads(data)
-        print pollJson
+        if verbose:
+            print pollJson
         rc = pollJson['status']
         if rc <= 0 or not wait:
             break
+        time.sleep(1)
     return pollJson
 
 def get_results(args, responseJson, agent):
     if responseJson['status'] > 0:
         print "Not ready to get results"
+        return
+    if responseJson['status'] < -3:
+        print "Bad job status, no results"
         return
     if not args.noresult and not args.harp:
         download_files(responseJson, args, agent)
@@ -61,13 +68,17 @@ def execute(args):
 
     if args.async:
         path = '/async'
-
-    print agent +  path
+    else:
+        path = ''
+    if args.verbose:
+        print agent + path
     headers = {"Content-type": "application/json"}
     conn = httplib.HTTPConnection(IP, port)
 
     if args.retrieve:
-        do_retrieve(conn, args.config, args.wait)
+        responseJson = do_retrieve(conn, args.config, args.wait, args.verbose)
+        get_results(args, responseJson, agent)
+        return
 
     with open(args.config, 'r') as f:
         config = f.read()
@@ -84,9 +95,9 @@ def execute(args):
     if 'message' in responseJson:
         print responseJson['message']
     if args.async:
-        print responseJson['message']
         jobId = responseJson['job-id']
-        responseJson = do_retrieve(conn, jobId, args.wait)
+        print "JobId:", jobId
+        responseJson = do_retrieve(conn, jobId, args.wait, args.verbose)
     get_results(args, responseJson, agent)
 
 
@@ -103,6 +114,7 @@ def main():
     parser.add_argument('-r', '--retrieve', action='store_true', default=False, help='retrieve the results using job ID')
     parser.add_argument('-f', '--final', action='store_true', default=False, help='only download the final har')
     parser.add_argument('-p', '--harp', action='store_true', default=False, help='just print out the urls of the final har in jsonp format')
+    parser.add_argument('-v', '--verbose', action='store_true', default=False, help='Print more')
     args = parser.parse_args()
 
     execute(args)
