@@ -181,8 +181,9 @@ def run_test_body(testConfig, jobIdPath, jobIdIndex, jobId):
         response['files'] = []
         for f in os.listdir(jobIdPath):
             response['files'].append(os.path.join(jobUrl, f))
-        p = subprocess.Popen(['touch', '.TEST_DONE'], cwd=jobIdPath,
-                             stdout=testLog, stderr=testLog)
+        with open(os.path.join(jobIdPath, 'test.log'), 'a') as log:
+            p = subprocess.Popen(['touch', '.TEST_DONE'], cwd=jobIdPath,
+                                 stdout=log, stderr=log)
         p.wait()
         with open(os.path.join(jobIdPath, '.TEST_RESPONSE'), 'w') as responseFile:
             json.dump(response, responseFile, indent=4)
@@ -323,7 +324,6 @@ class S(BaseHTTPRequestHandler):
         body['action'] = query.get('action', [None])[0]
         body['key'] = query.get('key', [None])[0]
         body['tests-config'] = query.get('tests-config', [None])[0]
-        print body
         body = json.dumps(body)
         response_body =  json.dumps(self.execute_POST(body), indent=4)
         response_body = '{0}({1});'.format(callback, response_body)
