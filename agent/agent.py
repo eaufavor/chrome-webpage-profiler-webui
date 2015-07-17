@@ -11,6 +11,16 @@ ERROR_BADJSON_MESSAGE = {'message':'POST content must be valid json!'}
 ERROR_BADPASS_MESSAGE = {'message':'Wrong secret key!'}
 ERROR_CMDERROR_MESSAGE = {'message':'Bad command!'}
 
+ERROR_CODE_IO = -2
+ERROR_CODE_QUEUE = -3
+ERROR_CODE_ID = -4
+ERROR_CODE_TEST_FAILED = -5
+ERROR_CODE_ANALYZE_FAILED = -6
+TEST_RUNNING = 1
+ANALYZE_RUNNING = 2
+OK_DONE = 0
+UNKNOWN_DONE = 3
+
 ACTIONS = {'run-test', 'self-test', 'run-test-and-analyze'}
 
 
@@ -96,8 +106,7 @@ def test_worker(worker_id, queue, analyze_queue):
         if testJob['willAnalyze']:
             analyze_queue.put(response)
         else:
-            p = subprocess.Popen(['touch', '.ALL_DONE'], cwd=testJob['jobIdPath'])
-            p.wait()
+            mark_all_done(testJob['jobIdPath'])
         queue.task_done()
 
 def analyze_worker(worker_id, queue):
@@ -105,9 +114,19 @@ def analyze_worker(worker_id, queue):
         analyzeJob = queue.get()
         ANALYZE_WORKERS[worker_id] = analyzeJob['job-id']
         run_analyze(analyzeJob)
-        p = subprocess.Popen(['touch', '.ALL_DONE'], cwd=analyzeJob['_job-path'])
-        p.wait()
+        mark_all_done(analyzeJob['_job-path'])
+        ANALYZE_WORKERS[worker_id] = None
         queue.task_done()
+
+def mark_all_done(working_dir):
+    p = subprocess.Popen(['touch', '.ALL_DONE'], cwd=working_dir)
+    p.wait()
+    randomFile = "%d.tar.gz"%(time.time()*1000)
+    p = subprocess.Popen(['tar', '-czf', '../%s'%randomFile, '.'], cwd=working_dir)
+    p.wait()
+    p = subprocess.Popen(['mv', '../%s'%randomFile, './results.tar.gz'], cwd=working_dir)
+    p.wait()
+
 ### async functions end
 
 ### functions for running test drivers
@@ -137,14 +156,14 @@ def run_test(body, willAnalyze=False, async=False):
             os.makedirs(jobIdIndexPath)
         except Exception as _:
             msg = 'Error making output directory: %s', jobIdIndexPath
-            return {'message': msg, 'status': -2}
+            return {'message': msg, 'status': ERROR_CODE_IO}
 
     if not os.path.isdir(jobIdPath):
         try:
             os.makedirs(jobIdPath)
         except Exception as _:
             msg = 'Error making output directory: %s', jobIdPath
-            return {'message': msg, 'status': -2}
+            return {'message': msg, 'status': ERROR_CODE_IO}
 
     tests = body['tests-config']
     with open(testConfig, 'w') as outfile:
@@ -158,7 +177,7 @@ def run_test(body, willAnalyze=False, async=False):
             return response
     else:
         if testQueue.unfinished_tasks >= MAX_TEST_JOBS:
-            return {'message': 'Test queue is full. %d tasks'%testQueue.unfinished_tasks, 'status': -2}
+            return {'message': 'Test queue is full. %d tasks'%testQueue.unfinished_tasks, 'status': ERROR_CODE_QUEUE}
         job = {}
         job['testConfig'] = testConfig
         job['jobIdPath'] = jobIdPath
@@ -176,11 +195,13 @@ def run_test_body(testConfig, jobIdPath, jobIdIndex, jobId):
         rc = p.wait()
     if rc == 0:
         jobUrl = os.path.join('/tmp/', jobIdIndex, jobId)
-        response = {'message': 'OK. Done', 'job-id': jobId,
-                    'status': rc, '_job-path': jobIdPath, '_job-url': jobUrl}
+        response = {'message': 'OK. Done', 'job-id': jobId, 'status': rc,
+                    'test_status': rc, '_job-path': jobIdPath, '_job-url': jobUrl}
         response['files'] = []
         for f in os.listdir(jobIdPath):
             response['files'].append(os.path.join(jobUrl, f))
+        # pretend the tarball is ready
+        response['tar'] = os.path.join(jobUrl, 'results.tar.gz')
         with open(os.path.join(jobIdPath, 'test.log'), 'a') as log:
             p = subprocess.Popen(['touch', '.TEST_DONE'], cwd=jobIdPath,
                                  stdout=log, stderr=log)
@@ -196,17 +217,17 @@ def run_test_body(testConfig, jobIdPath, jobIdIndex, jobId):
         p = subprocess.Popen(['touch', '.TEST_FAILED'], cwd=jobIdPath,
                              stdout=testLog, stderr=testLog)
         p.wait()
-        return {'message': 'FAIL. return code%d'%rc, 'status': rc}
+        return {'message': 'FAIL. return code%d'%rc, 'test_status': rc, 'status': rc}
 ### Test driver ends
 
 ### Functions for analyzer tools
 def run_analyze(response):
     workingDir = response['_job-path']
-    with open(os.path.join(workingDir, 'anaylyze.log'), 'a') as log:
-        if response['status'] != 0:
+    with open(os.path.join(workingDir, 'analyze.log'), 'a') as log:
+        if response['test_status'] != 0:
             # bad test
             log.write('Giving up analyze because tests(%d) failed: %d\n' %
-                             (response['job-id'], response['status']))
+                             (response['job-id'], response['test_status']))
             return response
         configFile = os.path.join(workingDir, 'tests.json')
         if not os.path.isfile(configFile):
@@ -239,7 +260,7 @@ def do_analyze(dump_file, har_file, key_file):
     finalHarFile = har_file.split('.har')[0]+'_final.har'
     cmd = ANALYZE_CMD.format(pcapfile=dump_file, keyfile=key_file, harfile=har_file,finalhar=finalHarFile)
     jobIdPath = os.path.dirname(dump_file)
-    with open(os.path.join(jobIdPath, 'anaylyze.log'), 'a') as log:
+    with open(os.path.join(jobIdPath, 'analyze.log'), 'a') as log:
         log.write('Analyze running: %s\n' % cmd)
     with open (os.path.join(jobIdPath, 'analyze.log'), 'a+') as analyzeLog:
         # WARNING: security risk: shell=True
@@ -256,7 +277,7 @@ def do_analyze(dump_file, har_file, key_file):
 
 ### self test functions
 def self_test(instance):
-    response = {'message': 'self test done', 'results': {} }
+    response = {'status': 0, 'message': 'self test done', 'results': {} }
     #rc = subprocess.check_output('df -h; exit 0', stderr=subprocess.STDOUT, shell=True)
     response['results']['client'] = instance.client_address
     workers = []
@@ -265,6 +286,8 @@ def self_test(instance):
     response['results']['worker_threads'] = workers
     response['results']['unfinished_tests'] = testQueue.unfinished_tasks
     response['results']['unfinished_analyse'] = anaylzeQueue.unfinished_tasks
+    response['results']['test_workers'] = TEST_WORKERS
+    response['results']['analyze_workers'] = ANALYZE_WORKERS
 
     return response
 
@@ -332,15 +355,70 @@ class S(BaseHTTPRequestHandler):
     def get_status(self):
         request = urlparse.urlparse(self.path)
         query = urlparse.parse_qs(request.query)
-        callback = query.get('callback', [])
-        if not callback:
-            callback = 'callback'
-        else:
-            callback = callback[0]
+        callback = query.get('callback', ['callback'])[0]
         reply = {'message':'%s \n Chrome webpage profiler web agent is alive at %s.' %\
                         (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), socket.gethostname())}
         response_body = '{0}({1});'.format(callback, json.dumps(reply, indent=4))
         self.wfile.write(response_body)
+
+    def short_reply(self, code=0, message="", callback=None):
+        reply = {'status': code, 'message': message}
+        response_body = json.dumps(reply, indent=4)
+        if callback:
+            response_body = '{0}({1});'.format(callback, response_body)
+        self.wfile.write(response_body)
+        return
+
+    def get_job(self):
+        request = urlparse.urlparse(self.path)
+        query = urlparse.parse_qs(request.query)
+        callback = query.get('callback', [None])[0]
+        jobId = query.get('jobid', [None])[0]
+
+        if not jobId:
+            return self.short_reply(ERROR_CODE_ID, "Need job ID.", callback)
+
+        jobIdIndex = jobId_to_jobIdIndex(jobId)
+        jobIdIndexPath = os.path.join(TMP, jobIdIndex)
+        jobIdPath = os.path.join(jobIdIndexPath, jobId)
+
+        if not os.path.isdir(jobIdPath):
+            return self.short_reply(ERROR_CODE_ID, "Job %s does not exist."%jobId, callback)
+
+        # running status
+        # TODO: check running percentage
+        if jobId in TEST_WORKERS.values():
+            return self.short_reply(TEST_RUNNING, "Job %s: Running test driver."%jobId, callback)
+        if jobId in ANALYZE_WORKERS.values():
+            return self.short_reply(TEST_RUNNING, "Job %s: Running analyzer."%jobId, callback)
+
+        # done status
+        if os.path.isfile(os.path.join(jobIdPath, '.RESPONSE')):
+            with open(os.path.join(jobIdPath, '.RESPONSE')) as responseFile:
+                response_body = responseFile.read()
+        else:
+            return self.short_reply(UNKNOWN_DONE, "Job %s: Response is missing. You may manually get result files"%jobId, callback)
+
+        if os.path.isfile(os.path.join(jobIdPath, '.ALL_DONE')):
+            code = OK_DONE
+            message = 'OK Done.'
+        elif os.path.isfile(os.path.join(jobIdPath, '.TEST_FAILED')):
+            code = ERROR_CODE_TEST_FAILED
+            message = "Job %s: Test driver failed."%jobId
+        elif os.path.isfile(os.path.join(jobIdPath, '.ANALYZE_FAILED')):
+            code = ERROR_CODE_TEST_FAILED
+            message = "Job %s: Analyzer failed."%jobId
+        else:
+            code = UNKNOWN_DONE
+            message = "Job %s: Job status untrackable."%jobId
+        response = json.loads(response_body)
+        response['status'] = code
+        response['message'] = message
+        response_body = json.dumps(response_body, indent=4)
+        if callback:
+            response_body = '{0}({1});'.format(callback, response_body)
+        self.wfile.write(response_body)
+        return
     ### trivial services end
 
     ### HTTP url router functions
@@ -372,6 +450,8 @@ class S(BaseHTTPRequestHandler):
             self.send_file()
         elif request.path == ('/status'):
             self.get_status()
+        elif request.path == ('/job'):
+            self.get_job()
         elif request.path == ('/run'):
             self.get_to_post_Jsonp()
         else:
