@@ -16,10 +16,14 @@ ERROR_CODE_QUEUE = -3
 ERROR_CODE_ID = -4
 ERROR_CODE_TEST_FAILED = -5
 ERROR_CODE_ANALYZE_FAILED = -6
+UNKNOWN_DONE = -7
+
+#positive code: running
 TEST_RUNNING = 1
 ANALYZE_RUNNING = 2
+
 OK_DONE = 0
-UNKNOWN_DONE = 3
+
 
 ACTIONS = {'run-test', 'self-test', 'run-test-and-analyze'}
 
@@ -172,8 +176,11 @@ def run_test(body, willAnalyze=False, async=False):
     if not async:
         response = run_test_body(testConfig, jobIdPath, jobIdIndex, jobId)
         if willAnalyze:
-            return run_analyze(response)
+            response = run_analyze(response)
+            mark_all_done(jobIdPath)
+            return response
         else:
+            mark_all_done(jobIdPath)
             return response
     else:
         if testQueue.unfinished_tasks >= MAX_TEST_JOBS:
@@ -201,7 +208,7 @@ def run_test_body(testConfig, jobIdPath, jobIdIndex, jobId):
         for f in os.listdir(jobIdPath):
             response['files'].append(os.path.join(jobUrl, f))
         # pretend the tarball is ready
-        response['tar'] = os.path.join(jobUrl, 'results.tar.gz')
+        response['tarball'] = os.path.join(jobUrl, 'results.tar.gz')
         with open(os.path.join(jobIdPath, 'test.log'), 'a') as log:
             p = subprocess.Popen(['touch', '.TEST_DONE'], cwd=jobIdPath,
                                  stdout=log, stderr=log)
