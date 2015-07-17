@@ -421,7 +421,7 @@ class S(BaseHTTPRequestHandler):
         response = json.loads(response_body)
         response['status'] = code
         response['message'] = message
-        response_body = json.dumps(response_body, indent=4)
+        response_body = json.dumps(response, indent=4)
         if callback:
             response_body = '{0}({1});'.format(callback, response_body)
         self.wfile.write(response_body)

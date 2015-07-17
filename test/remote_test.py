@@ -6,7 +6,7 @@ import httplib, subprocess, os, time
 def download_files(responseJson, args, agent):
     if args.tarball:
         fUrl = agent+responseJson['tarball']
-        p = subprocess.Popen(['wget', fUrl], '-O', 'results.tar.gz')
+        p = subprocess.Popen(['wget', fUrl, '-O', 'results.tar.gz'])
         return
     os.makedirs(responseJson['job-id'])
     if 'final-hars' in responseJson:
@@ -58,7 +58,7 @@ def execute(args):
         rc = 1
         while rc > 0:
             time.sleep(1)
-            conn.request("GET", '/job?jobid=%s'%jobId, '', '')
+            conn.request("GET", '/job?jobid=%s'%jobId)
             poll = conn.getresponse()
             print poll.status, poll.reason
             data = poll.read()
