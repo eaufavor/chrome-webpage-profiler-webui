@@ -10,13 +10,15 @@ def execute(args):
     else:
         port = 80
     agent = 'http://' + args.agent
+    if args.async:
+        path = '/async'
     with open(args.config, 'r') as f:
         config = f.read()
 
-    print agent
+    print agent +  path
     headers = {"Content-type": "application/json"}
     conn = httplib.HTTPConnection(IP, port)
-    conn.request("POST", "", config, headers)
+    conn.request("POST", path, config, headers)
     response = conn.getresponse()
     if not args.harp:
         print response.status, response.reason
@@ -62,6 +64,7 @@ def main():
     parser.add_argument('config', help='Path to the config file')
     #parser.add_argument('-a', '--analyze', action='store_true', default=False, help='perform TCP analyze on remote test agent as well')
     parser.add_argument('-n', '--noresult', action='store_true', default=False, help='don not try to download result file at all, only show response')
+    parser.add_argument('-a', '--async', action='store_true', default=False, help='async mode, POST and leave')
     parser.add_argument('-f', '--final', action='store_true', default=False, help='only download the final har')
     parser.add_argument('-p', '--harp', action='store_true', default=False, help='just print out the urls of the final har in jsonp format')
     args = parser.parse_args()
