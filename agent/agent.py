@@ -377,6 +377,7 @@ class S(BaseHTTPRequestHandler):
         return
 
     def get_job(self):
+        self._set_headers()
         request = urlparse.urlparse(self.path)
         query = urlparse.parse_qs(request.query)
         callback = query.get('callback', [None])[0]
@@ -398,6 +399,8 @@ class S(BaseHTTPRequestHandler):
             return self.short_reply(TEST_RUNNING, "Job %s: Running test driver."%jobId, callback)
         if jobId in ANALYZE_WORKERS.values():
             return self.short_reply(TEST_RUNNING, "Job %s: Running analyzer."%jobId, callback)
+
+        # TODO: check if queued
 
         # done status
         if os.path.isfile(os.path.join(jobIdPath, '.RESPONSE')):
