@@ -399,17 +399,16 @@ class S(BaseHTTPRequestHandler):
         if jobId in TEST_WORKERS.values():
             files = glob.glob(os.path.join(jobIdPath, '*.har'))
             if files:
-                newest = max(files, key=os.path.getctime)
+                newest = os.path.basename(max(files, key=os.path.getctime))
             else:
-                files = 'Just started'
+                newest = 'Just started'
             return self.short_reply(TEST_RUNNING, "Job %s: Running test driver: %s"%(jobId, newest), callback)
         if jobId in ANALYZE_WORKERS.values():
             files = glob.glob(os.path.join(jobIdPath, '*.har'))
             if files:
-                newest = max(files, key=os.path.getctime)
+                newest = os.path.basename(max(files, key=os.path.getctime))
             else:
-                files = 'Just started'
-            newest = max(glob.iglob('*.har'), key=os.path.getctime)
+                newest = 'Just started'
             return self.short_reply(TEST_RUNNING, "Job %s: Running analyzer: %s"%(jobId, newest), callback)
 
         # TODO: check if queued
