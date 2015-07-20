@@ -1,0 +1,179 @@
+.page-content{
+    width: 100%;
+    margin-left: 10px;
+    margin-right: 10px;
+    text-align: center;
+    min-height: 600px;
+}
+
+#create-test{
+    text-align: center;
+}
+
+#counter{
+    display: none;
+}
+
+.input_form{
+    width: 100%;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.form-grid{
+    display: inline-block;
+    vertical-align:top;
+}
+
+.final-grid{
+    width: 1000px;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.check_output{
+    margin: 20px;
+    text-align: center;
+}
+.mdl-layout__tab-panel{
+    min-height: 600px;
+}
+
+.mdl-radio{
+    margin: 5px;
+}
+#agent-info{
+    width: 500px;
+}
+
+#check-health{
+    width: 500px;
+}
+
+#health_bar{
+    display:none;
+    margin-left: 30%;
+    width: 200px;
+}
+#final_bar{
+    display:none;
+    margin-left: 20%;
+    width: 800px;
+}
+
+
+#result-card{
+    display:none;
+    min-height: 100px;
+    width: 100%;
+}
+
+#final-card{
+    display:none;
+    min-height: 100px;
+    width: 50%;
+    text-align: center;
+    margin-left: 25%;
+}
+
+#final-div{
+    text-align: center;
+}
+
+#json-card{
+    text-align: left;
+}
+
+.mdl-demo main > .mdl-layout__tab-panel {
+  padding: 8px;
+  padding-top: 48px;
+}
+
+.mdl-demo section > button {
+  position: absolute;
+  z-index: 99;
+  top: 8px;
+  right: 8px;
+}
+
+.mdl-demo .mdl-card {
+  height: auto;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -webkit-flex-direction: column;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+.mdl-demo .mdl-card > * {
+  height: auto;
+}
+.mdl-demo .mdl-card .mdl-card__supporting-text {
+  margin: 40px;
+  -webkit-box-flex: 1;
+  -webkit-flex-grow: 1;
+      -ms-flex-positive: 1;
+          flex-grow: 1;
+  padding: 0;
+  color: inherit;
+  width: calc(100% - 80px);
+}
+.mdl-demo.mdl-demo .mdl-card__supporting-text h4 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+.mdl-demo .mdl-card__actions {
+  margin: 0;
+  padding: 4px 40px;
+  color: inherit;
+}
+.mdl-demo .mdl-card__actions a {
+  color: #00BCD4;
+  margin: 0;
+}
+.mdl-demo .mdl-card__actions a:hover,
+.mdl-demo .mdl-card__actions a:active {
+  color: inherit;
+  background-color: transparent;
+}
+.mdl-demo .mdl-card__supporting-text + .mdl-card__actions {
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+.mdl-demo #add {
+  position: absolute;
+  right: 40px;
+  top: 36px;
+  z-index: 999;
+}
+
+.mdl-demo .mdl-layout__content section:not(:last-of-type) {
+  position: relative;
+  margin-bottom: 48px;
+}
+.mdl-demo section.section--center {
+  max-width: 860px;
+}
+
+.mdl-card .mdl-card__title {
+    color: #fff;
+    background: #3F51B5;
+}
+
+.mdl-switch{
+    text-align: left;
+}
+#test_config {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+#inter-results {
+    display: none;
+}
+
+#results-table {
+    margin-left:  15%;
+}
