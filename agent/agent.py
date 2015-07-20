@@ -456,7 +456,7 @@ class S(BaseHTTPRequestHandler):
             file_list = {}
             for i in range(len(file_types)):
                 if f[i]:
-                    file_list[file_types[i]] = os.path.join(jobUrl + os.path.basename(f[i]))
+                    file_list[file_types[i]] = os.path.join(jobUrl, os.path.basename(f[i]))
             file_groups.append(file_list)
         response['file_groups'] = file_groups
         response_body = json.dumps(response, indent=4)
