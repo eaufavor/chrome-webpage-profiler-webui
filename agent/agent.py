@@ -397,9 +397,18 @@ class S(BaseHTTPRequestHandler):
         # TODO: check running percentage
 
         if jobId in TEST_WORKERS.values():
-            newest = max(glob.iglob('*.har'), key=os.path.getctime)
+            files = glob.glob(os.path.join(jobIdPath, '*.har'))
+            if files:
+                newest = max(files, key=os.path.getctime)
+            else:
+                files = 'Just started'
             return self.short_reply(TEST_RUNNING, "Job %s: Running test driver: %s"%(jobId, newest), callback)
         if jobId in ANALYZE_WORKERS.values():
+            files = glob.glob(os.path.join(jobIdPath, '*.har'))
+            if files:
+                newest = max(files, key=os.path.getctime)
+            else:
+                files = 'Just started'
             newest = max(glob.iglob('*.har'), key=os.path.getctime)
             return self.short_reply(TEST_RUNNING, "Job %s: Running analyzer: %s"%(jobId, newest), callback)
 
