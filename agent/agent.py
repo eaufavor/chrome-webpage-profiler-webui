@@ -3,7 +3,7 @@
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from SocketServer import ThreadingMixIn
 import threading, Queue
-import json, subprocess, os, time, urlparse, re, argparse, socket, datetime
+import json, subprocess, os, time, urlparse, re, argparse, socket, datetime, glob
 
 HELLO_MESSAGE = {'message':'hello, please use JSON via POST!'}
 ERROR_JSON_MESSAGE = {'message':'POST content type must be application/json!'}
@@ -395,10 +395,13 @@ class S(BaseHTTPRequestHandler):
 
         # running status
         # TODO: check running percentage
+
         if jobId in TEST_WORKERS.values():
-            return self.short_reply(TEST_RUNNING, "Job %s: Running test driver."%jobId, callback)
+            newest = max(glob.iglob('*.har'), key=os.path.getctime)
+            return self.short_reply(TEST_RUNNING, "Job %s: Running test driver: %s"%(jobId, newest), callback)
         if jobId in ANALYZE_WORKERS.values():
-            return self.short_reply(TEST_RUNNING, "Job %s: Running analyzer."%jobId, callback)
+            newest = max(glob.iglob('*.har'), key=os.path.getctime)
+            return self.short_reply(TEST_RUNNING, "Job %s: Running analyzer: %s"%(jobId, newest), callback)
 
         # TODO: check if queued
 
