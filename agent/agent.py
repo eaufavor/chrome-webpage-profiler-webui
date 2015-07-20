@@ -451,12 +451,13 @@ class S(BaseHTTPRequestHandler):
         jobUrl = os.path.join('/tmp/', jobIdIndex, jobId)
         files = find_dump_har_pairs(jobIdPath, os.path.join(jobIdPath, 'tests.json'), ignore_missing=True)
         file_groups = []
-        file_types = ['har','pcap','screenshot', 'finalhar', 'url']
+        file_types = ['har','pcap','screenshot', 'finalhar']
         for f in files:
             file_list = {}
             for i in range(len(file_types)):
                 if f[i]:
                     file_list[file_types[i]] = os.path.join(jobUrl, os.path.basename(f[i]))
+            file_list['url'] = f[4]
             file_groups.append(file_list)
         response['file_groups'] = file_groups
         response_body = json.dumps(response, indent=4)
