@@ -106,11 +106,11 @@ def test_worker(worker_id, queue, analyze_queue):
         TEST_WORKERS[worker_id] = testJob['jobId']
         response = run_test_body(testJob['testConfig'], testJob['jobIdPath'],
                            testJob['jobIdIndex'], testJob['jobId'])
-        TEST_WORKERS[worker_id] = None
         if testJob['willAnalyze']:
             analyze_queue.put(response)
         else:
             mark_all_done(testJob['jobIdPath'])
+        TEST_WORKERS[worker_id] = None
         queue.task_done()
 
 def analyze_worker(worker_id, queue):
