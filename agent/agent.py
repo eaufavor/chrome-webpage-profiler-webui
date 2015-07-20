@@ -77,7 +77,7 @@ def _outfile_path(working_dir, url, suffix=None, trial=None):
 def jobId_to_jobIdIndex(jobId):
     return jobId[-10:-5]
 
-def find_dump_har_pairs(working_dir, config_file):
+def find_dump_har_pairs(working_dir, config_file, ignore_missing=False):
     pairs = []
     with open(config_file, 'r') as f:
         config = json.load(f)
@@ -85,17 +85,30 @@ def find_dump_har_pairs(working_dir, config_file):
     for test in config['tests']:
         pcapFileNamePrefix = test.get('packet_capture_file_name', test['url'])
         harFileNamePrefix = test.get('har_file_name', test['url'])
+        screenshotNamePrefix = test.get('screenshot_name', test['url'])
         with open(os.path.join(working_dir, 'analyze.log'), 'a') as log:
             for i in range(0, test.get('num_trials', 1)):
                 pcapFileName = _outfile_path(working_dir, pcapFileNamePrefix, suffix='.pcap', trial=i)
                 harFileName = _outfile_path(working_dir, harFileNamePrefix, suffix='.har', trial=i)
+                finalHarFileName = _outfile_path(working_dir, harFileNamePrefix, suffix='_final.har', trial=i)
+                screenshotName = _outfile_path(working_dir, screenshotNamePrefix, suffix='.png', trial=i)
                 if not os.path.isfile(pcapFileName):
-                    log.write('Analyze warning: missing %s\n'% pcapFileName)
-                    continue
+                    if not ignore_missing:
+                        log.write('Analyze warning: missing %s\n'% pcapFileName)
+                        continue
+                    else:
+                        pcapFileName = None
                 if not os.path.isfile(harFileName):
-                    log.write('Analyze warning: missing %s\n'% harFileName)
-                    continue
-                pairs.append([pcapFileName, harFileName])
+                    if not ignore_missing:
+                        log.write('Analyze warning: missing %s\n'% harFileName)
+                        continue
+                    else:
+                        harFileName = None
+                if not os.path.isfile(finalHarFileName):
+                    finalHarFileName = None
+                if not os.path.isfile(screenshotName):
+                    screenshotName = None
+                pairs.append([pcapFileName, harFileName, screenshotName, finalHarFileName, test['url']])
     return pairs
 ### Helper functions end
 
@@ -435,6 +448,17 @@ class S(BaseHTTPRequestHandler):
         response = json.loads(response_body)
         response['status'] = code
         response['message'] = message
+        jobUrl = os.path.join('/tmp/', jobIdIndex, jobId)
+        files = find_dump_har_pairs(jobIdPath, os.path.join(jobIdPath, 'tests.json'), ignore_missing=True)
+        file_lists = []
+        file_types = ['har','pcap','screenshot', 'finalhar', 'url']
+        for f in files:
+            file_list = {}
+            for i in range(len(file_types)):
+                if f[i]:
+                    file_list[file_types[i]] = jobUrl + f[i]
+            file_lists.append(file_list)
+        response['file_lists'] = file_lists
         response_body = json.dumps(response, indent=4)
         if callback:
             response_body = '{0}({1});'.format(callback, response_body)
