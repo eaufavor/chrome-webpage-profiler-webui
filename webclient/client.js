@@ -121,11 +121,33 @@ function show_results() {
     event.preventDefault();
     $('#results_table_body').empty();
     $.each(results_data.file_groups, make_table_row);
+    $.each(results_data.files, make_result_buttoms);
+    $('#get_tarball').click(function(){
+        window.open(url+results_data.tarball, '_blank');
+    });
     //$.each(['aay','ppa'], make_table_row(row));
     $("#show_results")[0].click();
 }
 
 var viewer = "http://bos-lvg5b.kendall.corp.akamai.com/index.php?inputUrl=";
+
+function make_result_buttoms(index, value) {
+    if (value.search('test.log') >= 0){
+        $('#get_test_log').click(function(){
+            window.open(url+value, '_blank');
+        });
+    }
+    else if (value.search('analyze.log') >= 0) {
+        $('#get_analyze_log').click(function(){
+            window.open(url+value, '_blank');
+        });
+    }
+    else if (value.search('ssl_keylog') >= 0) {
+        $('#get_keys').click(function(){
+            window.open(url+value, '_blank');
+        });
+    }
+}
 
 function make_table_row(index, value) {
     row = document.createElement('tr');

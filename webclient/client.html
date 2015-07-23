@@ -140,7 +140,27 @@
                 </div>
               </div>
               <div class="mdl-textfield mdl-js-textfield textfield-demo final-grid">
-                <textarea class="mdl-textfield__input" type="text" rows= "30" id="test_config" ></textarea>
+                <textarea class="mdl-textfield__input" type="text" rows= "30" id="test_config" >
+{
+    "tests": [
+        {
+            "url": "https://www.akamai.com",
+            "har_file_name": "akamai_har",
+            "packet_capture_file_name": "akamai_dump",
+            "screenshot_name": "akamai_st",
+            "fresh_view": true
+        }
+    ],
+    "default": {
+        "log_ssl_keys": true,
+        "headless": true,
+        "save_screenshot": true;
+        "save_har": true,
+        "save_packet_capture": true,
+        "ignore_certificate_errors": true,
+        "browser": "chrome"
+    }
+}</textarea>
                 <label class="mdl-textfield__label" for="test-config">config file...</label>
               </div>
               <div id="final-div">
@@ -168,6 +188,23 @@
       </div>
       <div class="mdl-layout__tab-panel" id="show-test-results">
         <section class="page-content">
+          <dev>
+            <button id="get_tarball" class="mdl-button mdl-js-button mdl-button--icon mdl-button--colored">
+              <i class="material-icons">archive</i>
+            </button>tarball
+            <span style="margin: 10px;"></span>
+            <button id="get_test_log" class="mdl-button mdl-js-button mdl-button--icon mdl-button--colored">
+              <i class="material-icons">info</i>
+            </button>test log
+            <span style="margin: 10px;"></span>
+            <button id="get_analyze_log" class="mdl-button mdl-js-button mdl-button--icon mdl-button--colored">
+              <i class="material-icons">info_outline</i>
+            </button>analyzer log
+            <span style="margin: 10px;"></span>
+            <button id="get_keys" class="mdl-button mdl-js-button mdl-button--icon mdl-button--colored">
+              <i class="material-icons">https</i>
+            </button>SSL keys
+          </dev>
           <table id="results-table" class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
             <thead>
               <tr>
