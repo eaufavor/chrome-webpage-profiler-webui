@@ -51,7 +51,7 @@ function run_tests( agentIP, agentport, key, test_actions, test_config, query_jo
     else {
         config = {};
         try{
-            config['tests-config'] = JSON.parse(test_config.value);
+            config['tests-config'] = JSON.parse($('#test_config').val());
         }catch(e){
             config['tests-config'] = null;
         }
@@ -122,6 +122,7 @@ function show_results() {
     $('#results_table_body').empty();
     $.each(results_data.file_groups, make_table_row);
     $.each(results_data.files, make_result_buttoms);
+    $('#get_tarball').unbind( "click" );
     $('#get_tarball').click(function(){
         window.open(url+results_data.tarball, '_blank');
     });
@@ -133,16 +134,19 @@ var viewer = "http://bos-lvg5b.kendall.corp.akamai.com/index.php?inputUrl=";
 
 function make_result_buttoms(index, value) {
     if (value.search('test.log') >= 0){
+        $('#get_test_log').unbind( "click" );
         $('#get_test_log').click(function(){
             window.open(url+value, '_blank');
         });
     }
     else if (value.search('analyze.log') >= 0) {
+        $('#get_analyze_log').unbind( "click" );
         $('#get_analyze_log').click(function(){
             window.open(url+value, '_blank');
         });
     }
     else if (value.search('ssl_keylog') >= 0) {
+        $('#get_keys').unbind( "click" );
         $('#get_keys').click(function(){
             window.open(url+value, '_blank');
         });
