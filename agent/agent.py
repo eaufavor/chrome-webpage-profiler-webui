@@ -25,7 +25,7 @@ ANALYZE_RUNNING = 2
 OK_DONE = 0
 
 
-ACTIONS = {'run-test', 'self-test', 'run-test-and-analyze'}
+ACTIONS = {'run-test', 'self-test', 'run-test-and-analyze', 'clear-queue'}
 
 
 # TODO: dryrun to test these paths
@@ -496,7 +496,7 @@ class S(BaseHTTPRequestHandler):
             return run_test(body, willAnalyze=True, async=async)
         elif body['action'] == 'self-test':
             return self_test(self)
-        elif body['action'] == 'clean':
+        elif body['action'] == 'clear-queue':
             return clean_jobs(self)
 
     def do_GET(self):
