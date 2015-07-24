@@ -238,8 +238,8 @@ def run_test_body(testConfig, jobIdPath, jobIdIndex, jobId):
     else:
         with open(os.path.join(jobIdPath, 'test.log'), 'a') as log:
             log.write('Tests failed :%d\n'% rc)
-        p = subprocess.Popen(['touch', '.TEST_FAILED'], cwd=jobIdPath,
-                             stdout=testLog, stderr=testLog)
+            p = subprocess.Popen(['touch', '.TEST_FAILED'], cwd=jobIdPath,
+                             stdout=log, stderr=log)
         p.wait()
         return {'message': 'FAIL. return code%d'%rc, 'test_status': rc, 'status': rc}
 ### Test driver ends
