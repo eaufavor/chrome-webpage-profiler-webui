@@ -319,8 +319,11 @@ def async_dryrun(_):
     pass
 
 def clean_jobs(_):
+    jobs = len(RUNNING_TESTS)
     for p in RUNNING_TESTS:
         p.terminate()
+    response = {'status': 0, 'message': 'Killed %d jobs'%jobs}
+    return response
 
 ### self test functions end
 
