@@ -130,6 +130,9 @@ def test_worker(worker_id, queue, analyze_queue):
 def analyze_worker(worker_id, queue):
     while True:
         analyzeJob = queue.get()
+        if analyzeJob['status'] != 0:
+            queue.task_done()
+            continue
         ANALYZE_WORKERS[worker_id] = analyzeJob['job-id']
         run_analyze(analyzeJob)
         mark_all_done(analyzeJob['_job-path'])
