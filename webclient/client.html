@@ -123,7 +123,7 @@
                 </div>
                 <div class="form-grid" id="check-health">
                   <div class="check_output">
-                    <button onclick="check_health(agentIP, agentport)" class="mdl-button mdl-js-button mdl-button--primary mdl-js-ripple-effect">
+                    <button id="check_heath_button" class="mdl-button mdl-js-button mdl-button--primary mdl-js-ripple-effect">
                       Check alive
                     </button>
                   </div>
@@ -173,11 +173,11 @@
                 </div>
               </div>
               <div class="Run-tests">
-                <button onclick="run_tests(agentIP, agentport, key, test_actions, test_config, jobid)" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">
+                <button id="run_test_button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">
                   Run
                 </button>
                 <span style="margin: 10px;"></span>
-                <button onclick="show_results()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect">
+                <button id="show_results_button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect">
                   Show results
                 </button>
               </div>

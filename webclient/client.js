@@ -1,13 +1,21 @@
 /*jshint multistr: true */
 
-function check_health( agentIP, agentport ) {
+$('#check_heath_button').click(check_health);
+$('#run_test_button').click(run_tests);
+$('#show_results_button').click(show_results);
+
+function check_health( event ) {
+    event.preventDefault();
+
     $("#result-card").hide();
     $( "#output" ).text( '' ).show();
     $("#health_bar").show();
-    var url = "http://" + agentIP.value.trim();
-    if (agentIP.value.trim().search(':')<0) {
-        if (agentport.value.trim()) {
-            url = url + ':' + agentport.value.trim();
+    var ip = $("#agentIP").val().trim();
+    var port =  $("#agentport").val().trim();
+    var url = "http://" + ip;
+    if (ip.search(':')<0) {
+        if (port.trim()) {
+            url = url + ':' + $("#agentport").val().trim();
         }
         else {
             url = url + ':' + '8000';
@@ -24,28 +32,35 @@ function check_health( agentIP, agentport ) {
         error:function(e1, e2, e3){ $("#health_bar").hide(); $("#result-card").show(); $( "#output" ).text( e2+' '+e3 ).show(); },
         success:function(data){ $("#health_bar").hide(); $("#result-card").show(); $( "#output" ).text( data.message ).show(); }
     });
-    event.preventDefault();
 }
 
 var url;
 var jobid;
 var config;
 
-function run_tests( agentIP, agentport, key, test_actions, test_config, query_jobid ) {
+function run_tests( event ) {
+    event.preventDefault();
+
     $("#final_bar").show();
     $("#final-card").hide();
-    url = "http://" + agentIP.value.trim();
+    var agentIP = $("#agentIP").val();
+    var agentport = $("#agentport").val();
+    var key = $("#key").val();
+    var test_actions = $('input[name=test_actions]:checked', '#test-form').val();
+    var test_config = $("#test_config").val();
+    var query_jobid = $("#query_jobid").val();
+    url = "http://" + agentIP.trim();
 
-    if (agentIP.value.trim().search(':')<0) {
-        if (agentport.value.trim()) {
-            url = url + ':' + agentport.value.trim();
+    if (agentIP.trim().search(':')<0) {
+        if (agentport.trim()) {
+            url = url + ':' + agentport.trim();
         }
         else {
             url = url + ':' + '8000';
         }
     }
-    if (query_jobid.value) {
-        jobid = query_jobid.value;
+    if (query_jobid) {
+        jobid = query_jobid;
         check_submitted();
     }
     else {
@@ -55,10 +70,10 @@ function run_tests( agentIP, agentport, key, test_actions, test_config, query_jo
         }catch(e){
             config['tests-config'] = null;
         }
-        config.action = test_actions.value;
-        config.key = key.value;
+        config.action = test_actions;
+        config.key = key;
         data = JSON.stringify(config);
-        $( "#final_result" ).text( url + ' key:' + key.value + ' action:' + test_actions.value  ).show();
+        $( "#final_result" ).text( url + ' key:' + key + ' action:' + test_actions  ).show();
         $.ajax({
             cache:false,
             method:"POST",
@@ -68,7 +83,6 @@ function run_tests( agentIP, agentport, key, test_actions, test_config, query_jo
             success: submitted
         });
     }
-    event.preventDefault();
 }
 
 var cs_timeout;
@@ -109,7 +123,7 @@ function check_finished( data ) {
         $( "#final_result" ).text( JSON.stringify(data, null, 2) ).show();
         results_data = data;
         clearTimeout(cs_timeout);
-        show_results();
+        show_results(null);
     }
     else {
         $("#inter-results").text(data.message).show();
@@ -117,8 +131,10 @@ function check_finished( data ) {
     }
 }
 
-function show_results() {
-    event.preventDefault();
+function show_results( event ) {
+    if (event) {
+        event.preventDefault();
+    }
     $('#results_table_body').empty();
     $.each(results_data.file_groups, make_table_row);
     $.each(results_data.files, make_result_buttoms);
