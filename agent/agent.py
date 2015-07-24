@@ -47,6 +47,7 @@ SECRET_KEY = '1a2b'
 
 
 TEST_WORKERS = {}
+RUNNING_TESTS = []
 ANALYZE_WORKERS = {}
 
 MAX_TEST_JOBS = 1
@@ -212,7 +213,10 @@ def run_test_body(testConfig, jobIdPath, jobIdIndex, jobId):
     with open (os.path.join(jobIdPath, 'test.log'), 'w+') as testLog:
         p = subprocess.Popen([TEST_DRIVER, testConfig], cwd=jobIdPath,
                              stdout=testLog, stderr=testLog)
+        RUNNING_TESTS.append(p)
         rc = p.wait()
+        if p in RUNNING_TESTS:
+            RUNNING_TESTS.remove(p)
     if rc == 0:
         jobUrl = os.path.join('/tmp/', jobIdIndex, jobId)
         response = {'message': 'OK. Done', 'job-id': jobId, 'status': rc,
@@ -313,6 +317,10 @@ def self_test(instance):
 
 def async_dryrun(_):
     pass
+
+def clean_jobs(_):
+    for p in RUNNING_TESTS:
+        p.terminate()
 
 ### self test functions end
 
@@ -488,6 +496,8 @@ class S(BaseHTTPRequestHandler):
             return run_test(body, willAnalyze=True, async=async)
         elif body['action'] == 'self-test':
             return self_test(self)
+        elif body['action'] == 'clean':
+            return clean_jobs(self)
 
     def do_GET(self):
         request = urlparse.urlparse(self.path)
