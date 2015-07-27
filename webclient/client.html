@@ -143,7 +143,7 @@
                 </div>
               </div>
               <div class="mdl-textfield mdl-js-textfield textfield-demo final-grid">
-                <textarea class="mdl-textfield__input" type="text" rows= "30" id="test_config" >
+                <textarea class="mdl-textfield__input" type="text" rows= "25" id="test_config" >
 {
     "tests": [
         {
@@ -166,16 +166,6 @@
 }</textarea>
                 <label class="mdl-textfield__label" for="test-config">config file...</label>
               </div>
-              <div id="final-div">
-                <div id="final_bar" class="mdl-progress mdl-js-progress mdl-progress__indeterminate progress-demo"></div>
-                <span id="inter-results"></span>
-                <div id="final-card" class="mdl-card mdl-shadow--2dp">
-                  <div class="mdl-card__title mdl-card--expand">Result</div>
-                  <div id="json-card" class="mdl-card__supporting-text">
-                    <pre id="final_result" style="white-space: pre-wrap"></pre>
-                  </div>
-                </div>
-              </div>
               <div class="Run-tests">
                 <button id="run_test_button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">
                   Run
@@ -184,6 +174,15 @@
                 <button id="show_results_button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect">
                   Show results
                 </button>
+              </div>
+              <div class="final-div">
+                <div id="final_bar" class="mdl-progress mdl-js-progress mdl-progress__indeterminate progress-demo"></div>
+                <div id="final-card" class="mdl-card mdl-shadow--2dp">
+                  <div class="mdl-card__title mdl-card--expand">Result</div>
+                  <div id="json-card" class="mdl-card__supporting-text">
+                    <pre id="final_result" style="white-space: pre-wrap"></pre>
+                  </div>
+                </div>
               </div>
             </form>
           </div>
