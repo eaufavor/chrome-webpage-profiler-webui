@@ -2,7 +2,7 @@
 #http://www.acmesystems.it/python_httpd
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from SocketServer import ThreadingMixIn
-import threading, Queue
+import threading, Queue, signal
 import json, subprocess, os, time, urlparse, re, argparse, socket, datetime, glob
 
 HELLO_MESSAGE = {'message':'hello, please use JSON via POST!'}
@@ -297,7 +297,7 @@ def do_analyze(dump_file, har_file, key_file):
         # fix path: abs file path to url path
         return '/tmp' + finalHarFile.split('/tmp')[1]
     else:
-        with open(os.path.join(jobIdPath, 'anaylyze.log'), 'a') as log:
+        with open(os.path.join(jobIdPath, 'analyze.log'), 'a') as log:
             log.write('Analyze cmd failed: %d\n' % rc)
         return None
 ### Analyzer tool ends
@@ -324,7 +324,7 @@ def async_dryrun(_):
 def clean_jobs(_):
     jobs = len(RUNNING_TESTS)
     for p in RUNNING_TESTS:
-        p.terminate()
+        p.send_signal(signal.SIGINT)
     response = {'status': 0, 'message': 'Killed %d jobs'%jobs}
     return response
 
@@ -605,7 +605,7 @@ if __name__ == "__main__":
             print "Starting Daemon on port %d" %  args.port
             run(port=args.port)
     elif args.kill:
-        import signal, daemon, daemon.pidfile, sys
+        import daemon, daemon.pidfile, sys
         pidFile = daemon.pidfile.PIDLockFile(PIDFILE)
         pid = pidFile.read_pid()
         if pid is None:
