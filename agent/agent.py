@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#http://www.acmesystems.it/python_httpd
+#This web server handles remote test requests.
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from SocketServer import ThreadingMixIn
 import threading, Queue, signal
@@ -11,6 +11,8 @@ ERROR_BADJSON_MESSAGE = {'message':'POST content must be valid json!'}
 ERROR_BADPASS_MESSAGE = {'message':'Wrong secret key!'}
 ERROR_CMDERROR_MESSAGE = {'message':'Bad command!'}
 
+
+# negative code: error and stopped
 ERROR_CODE_IO = -2
 ERROR_CODE_QUEUE = -3
 ERROR_CODE_ID = -4
@@ -18,24 +20,27 @@ ERROR_CODE_TEST_FAILED = -5
 ERROR_CODE_ANALYZE_FAILED = -6
 UNKNOWN_DONE = -7
 
-#positive code: running
+# positive code: running
 TEST_RUNNING = 1
 ANALYZE_RUNNING = 2
 
 OK_DONE = 0
 
-
+# all the supported actions
 ACTIONS = {'run-test', 'self-test', 'run-test-and-analyze', 'clear-queue'}
 
 
-# TODO: dryrun to test these paths
+# TODO: dryrun to test these paths are valid
 os.chdir(os.path.abspath(os.path.dirname(__file__)))
+
+# the following values define the paths to access other components
 TMP = os.path.abspath(r'./tmp')
 TEST_DRIVER = os.path.abspath(r'../../chrome-webpage-profiler/test_driver.py')
 H2_ANALYZER = os.path.abspath(r'../../http2-dump-anatomy/http_traffic_analyzer.py')
 MERGE_TOOL = os.path.abspath(r'../../http2-dump-anatomy/merge_har.py')
 TSHARK = os.path.abspath(r'../../wireshark-1.99.7/tshark')
 
+#The name of the PID file
 PIDFILE = os.path.abspath(r'./chrome-webpage-profiler-agent.pid')
 
 ANALYZE_CMD = '{H2_ANALYZER} -g {{pcapfile}} -k {{keyfile}} -b {TSHARK} | {MERGE_TOOL} {{harfile}} -o {{finalhar}}'
@@ -52,7 +57,7 @@ ANALYZE_WORKERS = {}
 
 MAX_TEST_JOBS = 1
 
-testQueue = Queue.Queue(1)
+testQueue = Queue.Queue(MAX_TEST_JOBS)
 anaylzeQueue = Queue.Queue()
 
 
@@ -76,14 +81,18 @@ def _outfile_path(working_dir, url, suffix=None, trial=None):
 ### Helper functions
 
 def jobId_to_jobIdIndex(jobId):
+    # the index is an addtional level of directory to avoid too many tests in the same dir
     return jobId[-10:-5]
 
 def find_dump_har_pairs(working_dir, config_file, ignore_missing=False):
+    # This function tries to pick up successfully generated har and pcap files
+    # to feed the analyzer
     pairs = []
     with open(config_file, 'r') as f:
         config = json.load(f)
 
     for test in config['tests']:
+        # decode each section
         pcapFileNamePrefix = test.get('packet_capture_file_name', test['url'])
         harFileNamePrefix = test.get('har_file_name', test['url'])
         screenshotNamePrefix = test.get('screenshot_name', test['url'])
@@ -115,6 +124,7 @@ def find_dump_har_pairs(working_dir, config_file, ignore_missing=False):
 
 ### Worker functions for async process
 def test_worker(worker_id, queue, analyze_queue):
+    # this is the test worker thread
     while True:
         testJob = queue.get()
         TEST_WORKERS[worker_id] = testJob['jobId']
@@ -131,6 +141,7 @@ def analyze_worker(worker_id, queue):
     while True:
         analyzeJob = queue.get()
         if analyzeJob['status'] != 0:
+            # ignore the failed ones
             queue.task_done()
             continue
         ANALYZE_WORKERS[worker_id] = analyzeJob['job-id']
@@ -140,11 +151,16 @@ def analyze_worker(worker_id, queue):
         queue.task_done()
 
 def mark_all_done(working_dir):
+    # tell when a test (and analysis) is finished
+
+    # first make a tarball for all the file
     randomFile = "%d.tar.gz"%(time.time()*1000)
     p = subprocess.Popen(['tar', '-czf', '../%s'%randomFile, '.'], cwd=working_dir)
     p.wait()
     p = subprocess.Popen(['mv', '../%s'%randomFile, './results.tar.gz'], cwd=working_dir)
     p.wait()
+
+    # them touch the file to create a hard statue
     p = subprocess.Popen(['touch', '.ALL_DONE'], cwd=working_dir)
     p.wait()
 
@@ -158,6 +174,7 @@ def run_test(body, willAnalyze=False, async=False):
 
     if not os.path.isdir(TMP):
         try:
+            # if tmp dir is not ready, make one
             os.makedirs(TMP)
         except Exception as _:
             msg = 'Error making output directory: %s', TMP
@@ -166,6 +183,9 @@ def run_test(body, willAnalyze=False, async=False):
         msg = 'No test driver found at %s' % TEST_DRIVER
         return {'message': msg, 'status': -1}
 
+    # create a unique path for a test
+    # now we use ./tmp/index/current_time_in_ms/ as the path where index is the
+    # 5th to 10th digits (right to left) of the time
     jobId = "%d"%(time.time()*1000)
     jobIdIndex = jobId_to_jobIdIndex(jobId)
     jobIdIndexPath = os.path.join(TMP, jobIdIndex)
